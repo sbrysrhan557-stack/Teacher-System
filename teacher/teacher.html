@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>لوحة تحكم المدرس | منصة المتابعة</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- to Export Excel -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+
+    <style>
+      .sidebar {
+        transition: all 0.3s;
+      }
+      @media (max-width: 1024px) {
+        .sidebar {
+          display: none;
+        }
+        .mobile-nav {
+          display: flex;
+        }
+      }
+      .section-card {
+        scroll-margin-top: 100px;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      .section-card {
+        scroll-margin-top: 100px;
+      }
+    </style>
+  </head>
+  <body class="bg-slate-50 min-h-screen font-sans flex">
+    <aside
+    id="mainSidebar"
+      class="sidebar w-72 bg-indigo-900 h-screen sticky top-0 flex-col p-6 text-white hidden lg:flex shadow-2xl"
+    >
+      <div class="mb-10">
+        <h1
+          class="text-2xl font-bold border-b border-indigo-700 pb-4 flex items-center gap-3"
+        >
+          <i class="fa-solid fa-chalkboard-user text-amber-400"></i>
+          بوابة المعلم
+        </h1>
+      </div>
+
+      <nav class="flex-1 space-y-2">
+        <a href="../Side/student-profile.html" target="_blank" class="bg-indigo-600 text-white p-3 rounded-xl block text-center font-bold">
+    📑 فتح ملف الطالب الشامل
+</a>
+        <a target="_blank"
+          href="../Side/class_reports.html"
+          class="flex items-center gap-3 p-3 rounded-xl hover:bg-indigo-800 transition-all group"
+        >
+          <i
+            class="fa-solid fa-chart-pie text-amber-400 group-hover:text-white"
+          ></i>
+          تقارير الصفوف الشاملة
+        </a>
+        <a
+          href="#paySection"
+          class="flex items-center gap-3 p-3 rounded-xl hover:bg-indigo-800 transition-all group"
+        >
+          <i
+            class="fa-solid fa-money-bill text-indigo-300 group-hover:text-white"
+          ></i>
+         المصروفات الشهرية
+        </a>
+        <a
+          href="../Side/upload-material.html"
+          class="flex items-center gap-3 p-3 rounded-xl hover:bg-indigo-800 transition-all group"
+        >
+          <i
+            class="fa-solid fa-upload text-indigo-300 group-hover:text-white"
+          ></i>
+          رفع المذكرات والملخصات
+        </a>
+        <a
+          href="#addStudentSection"
+          class="flex items-center gap-3 p-3 rounded-xl hover:bg-indigo-800 transition-all group"
+        >
+          <i
+            class="fa-solid fa-user-plus text-indigo-300 group-hover:text-white"
+          ></i>
+          تسجيل طالب
+        </a>
+        
+        <a
+          href="#editSection"
+          class="flex items-center gap-3 p-3 rounded-xl hover:bg-indigo-800 transition-all group"
+        >
+          <i
+            class="fa-solid fa-user-gear text-indigo-300 group-hover:text-white"
+          ></i>
+          تعديل البيانات
+        </a>
+        <a
+          href="#reportSection"
+          class="flex items-center gap-3 p-3 rounded-xl hover:bg-indigo-800 transition-all group"
+        >
+          <i
+            class="fa-solid fa-chart-line text-indigo-300 group-hover:text-white"
+          ></i>
+          تقارير الصفوف
+        </a>
+        <a 
+          href="../Side/whatsapp.html"
+          class="flex items-center gap-3 p-3 rounded-xl hover:bg-indigo-800 transition-all group"
+        >
+          <i
+            class="fa-solid fa-comments text-indigo-300 group-hover:text-white"
+          ></i>
+          إدارة روابط الواتساب
+        </a>
+      </nav>
+
+      <div class="mt-auto pt-6 border-t border-indigo-700">
+        <button id="btnOpenResetModal" class="mobile-nav-link flex items-center gap-3 p-3 rounded-xl bg-red-800 hover:bg-red-700 text-red-100 hover:text-white transition-all group w-full text-right cursor-pointer">
+    <i class="fa-solid fa-trash-can"></i> تصفير العام الدراسي
+</button>
+      </div>
+    </aside>
+
+    <main class="max-w-4xl min-w-0 flex-1 mx-auto px-4 py-8 space-y-8">
+      <header
+        class="bg-white shadow-sm p-4 sticky top-0 z-40 flex justify-between items-center px-8 border-b border-slate-200"
+      >
+        
+
+        <!-- زر فتح القائمة الجانبية في الفون (اضفنا له id="openSidebarBtn") -->
+        <button
+          id="openSidebarBtn"
+          class="lg:hidden p-2 text-indigo-900 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+        >
+          <i class="fa-solid fa-bars text-2xl"></i>
+        </button>
+      </header>
+
+      <!-- نظرة عامة على الإحصائيات -->
+      <section class="space-y-4">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <span class="w-2 h-6 bg-indigo-600 rounded-full"></span> نظرة عامة على الإحصائيات
+                </h2>
+                <button id="btnExportStudentsExcel" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-600/10 cursor-pointer">
+                    🟢 تصدير كشف الطلاب الحالي لـ Excel
+                </button>
+            </div>
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="bg-white p-5 rounded-2xl border border-slate-100 space-y-1">
+                    <p class="text-xs font-medium text-slate-400">إجمالي الطلاب المسجلين</p>
+                    <p id="statTotalStudents" class="text-2xl font-black text-slate-800">0 طالب</p>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-slate-100 space-y-1">
+                    <p class="text-xs font-medium text-slate-400">طلاب المرحلة الإعدادية</p>
+                    <p id="statPrepStudents" class="text-2xl font-black text-indigo-600">0 طالب</p>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-slate-100 space-y-1">
+                    <p class="text-xs font-medium text-slate-400">طلاب المرحلة الثانوية</p>
+                    <p id="statSecStudents" class="text-2xl font-black text-sky-600">0 طالب</p>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-slate-100 space-y-1">
+                    <p class="text-xs font-medium text-slate-400">نسبة حضور آخر حصة</p>
+                    <p id="statLastAttendanceRatio" class="text-2xl font-black text-emerald-600">0%</p>
+                </div>
+            </div>
+        </section>
+
+      <!-- تسجيل طالب جديد -->
+      <section
+        id="addStudentSection"
+        class="section-card bg-white p-6 rounded-2xl shadow-sm border border-slate-100"
+      >
+        <h2
+          class="text-lg font-bold text-slate-800 mb-4 border-r-4 border-indigo-600 pr-2"
+        >
+          تسجيل طالب جديد في السيستم
+        </h2>
+        <form id="addStudentForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1"
+              >اسم الطالب ثلاثي</label
+            >
+            <input
+              type="text"
+              id="newStudentName"
+              required
+              class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+            />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1"
+              >رقم هاتف الطالب</label
+            >
+            <input
+              type="tel"
+              id="newStudentPhone"
+              required
+              class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+            />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1"
+              >رقم هاتف ولي الأمر</label
+            >
+            <input
+              type="tel"
+              id="newParentPhone"
+              required
+              class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-indigo-500 outline-none text-left"
+              dir="ltr"
+            />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1"
+              >الصف الدراسي (السنة الدراسية)</label
+            >
+            <select
+              id="newAcademicYear"
+              class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+            >
+              <option value="الصف الأول الاعدادي">الصف الأول الاعدادي</option>
+              <option value="الصف الثاني الاعدادي">الصف الثاني الاعدادي</option>
+              <option value="الصف الثالث الاعدادي">الصف الثالث الاعدادي</option>
+              <option value="الصف الأول الثانوي">الصف الأول الثانوي</option>
+              <option value="الصف الثاني الثانوي">الصف الثاني الثانوي</option>
+              <option value="الصف الثالث الثانوي">الصف الثالث الثانوي</option>
+            </select>
+          </div>
+          <div class="md:col-span-2 text-left mt-2">
+            <button
+              type="submit"
+              class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl text-sm font-medium transition-colors cursor-pointer"
+            >
+              ➕ إضافة الطالب وتوليد كود الدخول
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- إدارة المدفوعات والاشتراكات الشهرية -->
+      <div id="paySection" class="bg-white p-6 rounded-3xl border border-slate-100 space-y-6">
+    <div>
+        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+            <span class="w-2 h-6 bg-amber-500 rounded-full"></span> إدارة المدفوعات والاشتراكات الشهرية
+        </h2>
+        <p class="text-xs text-slate-500 mt-1">اختر الصف الدراسي والشهر لرصد وتعديل حالة دفع الطلاب بضغطة واحدة.</p>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+        <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1.5">الصف الدراسي:</label>
+            <select id="payAcademicYearSelect" class="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-sm outline-none">
+              <option value="الصف الأول الاعدادي">الصف الأول الاعدادي</option>
+              <option value="الصف الثاني الاعدادي">الصف الثاني الاعدادي</option>
+              <option value="الصف الثالث الاعدادي">الصف الثالث الاعدادي</option>
+                <option value="الصف الأول الثانوي">الصف الأول الثانوي</option>
+                <option value="الصف الثاني الثانوي">الصف الثاني الثانوي</option>
+                <option value="الصف الثالث الثانوي">الصف الثالث الثانوي</option>
+            </select>
+        </div>
+        <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1.5">الشهر الدراسي للتحصيل:</label>
+            <select id="payMonthSelect" class="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-sm outline-none">
+                <option value="شهر يونيو 2026">شهر يونيو 2026</option>
+                <option value="شهر يوليو 2026">شهر يوليو 2026</option>
+                <option value="شهر أغسطس 2026">شهر أغسطس 2026</option>
+                <option value="شهر سبتمبر 2026">شهر سبتمبر 2026</option>
+            </select>
+        </div>
+        <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1.5">قيمة الاشتراك (ج.م):</label>
+            <input type="number" id="payAmountInput" value="150" class="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-sm outline-none font-mono">
+        </div>
+        <div class="sm:col-span-3">
+            <button id="btnFetchPayStudents" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-2.5 rounded-xl text-sm transition-all cursor-pointer">
+                🔍 عرض طلاب الصف لرصد الحسابات
+            </button>
+        </div>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="w-full text-right text-sm border-collapse">
+            <thead>
+                <tr class="bg-slate-50 text-slate-500 font-medium border-b border-slate-100">
+                    <th class="p-3">ID الطالب</th>
+                    <th class="p-3">اسم الطالب</th>
+                    <th class="p-3">الكود الدراسي</th>
+                    <th class="p-3">الحالة الحالية</th>
+                    <th class="p-3 text-center">إجراء السداد</th>
+                </tr>
+            </thead>
+            <tbody id="paymentRosterTableBody" class="text-slate-700">
+                <tr>
+                    <td colspan="5" class="p-6 text-center text-slate-400 italic">برجاء اختيار الصف والشهر واضغط على زر العرض...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+      </div>
+
+      <!-- تقرير حضور الطلاب -->
+      <section id="attendanceSection" class="section-card bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
+            <h2 class="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
+                <span class="w-2 h-8 bg-indigo-500 rounded-full"></span> تسجيل الحضور والغياب الجماعي (لكل الصف)
+            </h2>
+            
+            <form id="bulkAttendanceForm" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">اختر الصف الدراسي</label>
+                        <select id="attendanceAcademicYear" required class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+                            <option value="">-- اختر الصف --</option>
+                            <option value="الصف الأول الاعدادي">الصف الأول الاعدادي</option>
+                            <option value="الصف الثاني الاعدادي">الصف الثاني الاعدادي</option>
+                            <option value="الصف الثالث الاعدادي">الصف الثالث الاعدادي</option>
+                            <option value="الصف الأول الثانوي">الصف الأول الثانوي</option>
+                            <option value="الصف الثاني الثانوي">الصف الثاني الثانوي</option>
+                            <option value="الصف الثالث الثانوي">الصف الثالث الثانوي</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">تاريخ الحصة</label>
+                        <input type="date" id="attendanceDate" required class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-right border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-600 text-xs border-b border-slate-100">
+                                <th class="p-3">ID</th>
+                                <th class="p-3">اسم الطالب</th>
+                                <th class="p-3 w-64">الحالة (افتراضياً حاضر)</th>
+                                <th class="p-3 w-32">دقائق التأخير</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bulkAttendanceTableBody" class="text-slate-700 text-sm">
+                            <tr>
+                                <td colspan="4" class="p-4 text-center text-slate-400 italic">برجاء اختيار الصف الدراسي من الأعلى لإظهار قائمة الطلاب وتسجيل غيابهم...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="text-left">
+                    <button type="submit" id="btnSaveBulkAttendance" disabled class="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-2xl text-sm font-bold transition-all shadow-lg opacity-50 cursor-not-allowed">
+                        💾 حفظ دفتر الحضور والغياب بالكامل
+                    </button>
+                </div>
+            </form>
+        </section>
+
+      <!-- تقرير رصد درجات الطلاب -->
+      <section id="gradesSection" class="section-card bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
+            <h2 class="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
+                <span class="w-2 h-8 bg-emerald-500 rounded-full"></span> رصد درجات اختبار جديد (لكل الصف)
+            </h2>
+            
+            <form id="bulkGradesForm" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">اختر الصف الدراسي</label>
+                        <select id="examAcademicYear" required class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-emerald-500 outline-none bg-white">
+                            <option value="">-- اختر الصف --</option>
+                            <option value="الصف الأول الاعدادي">الصف الأول الاعدادي</option>
+                            <option value="الصف الثاني الاعدادي">الصف الثاني الاعدادي</option>
+                            <option value="الصف الثالث الاعدادي">الصف الثالث الاعدادي</option>
+                            <option value="الصف الأول الثانوي">الصف الأول الثانوي</option>
+                            <option value="الصف الثاني الثانوي">الصف الثاني الثانوي</option>
+                            <option value="الصف الثالث الثانوي">الصف الثالث الثانوي</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">اسم الامتحان / الاختبار</label>
+                        <input type="text" id="bulkExamName" required placeholder="مثال: شهر أكتوبر" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-emerald-500 outline-none bg-white">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">الدرجة النهائية (القصوى)</label>
+                        <input type="number" id="bulkMaxScore" required placeholder="مثال: 20" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-emerald-500 outline-none bg-white">
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-right border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-600 text-xs border-b border-slate-100">
+                                <th class="p-3">ID</th>
+                                <th class="p-3">اسم الطالب</th>
+                                <th class="p-3 w-32">الدرجة الحالية</th>
+                                <th class="p-3">ملاحظات المعلم للطالب</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bulkStudentsTableBody" class="text-slate-700 text-sm">
+                            <tr>
+                                <td colspan="4" class="p-4 text-center text-slate-400 italic">برجاء اختيار الصف الدراسي من الأعلى لإظهار قائمة الطلاب ورصد درجاتهم...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="text-left">
+                    <button type="submit" id="btnSaveBulkGrades" disabled class="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-2xl text-sm font-bold transition-all shadow-lg opacity-50 cursor-not-allowed">
+                        📝 حفظ ورصد درجات الامتحان للكل دفعة واحدة
+                    </button>
+                </div>
+            </form>
+        </section>
+
+      <!-- تعديل بيانات طالب مسجل -->
+      <section id="editSection" class="section-card bg-white p-6 rounded-2xl shadow-sm border border-slate-100 relative">
+  <h2 class="text-lg font-bold text-slate-800 mb-4 border-r-4 border-sky-500 pr-2">
+    تعديل بيانات طالب مسجل
+  </h2>
+
+  <div class="flex flex-col lg:flex-row gap-4 items-end mb-6 bg-slate-50 p-4 rounded-xl border border-slate-100">
+    <div class="flex-1 lg:w-auto w-full">
+      <label class="block text-xs font-medium text-slate-600 mb-1">ابحث عن الطالب المراد تعديله</label>
+      <input type="text" id="editSearchId" placeholder="اكتب هنا: الـ ID، اسم الطالب، أو كود الدخول (مثال: STD-4521)" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-sky-500 outline-none bg-white">
+    </div>
+    <button type="button" id="btnFetchStudent" class="bg-sky-500 hover:bg-sky-600 lg:w-auto w-full text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-colors cursor-pointer whitespace-nowrap">
+      🔍 جلب البيانات للتعديل
+    </button>
+  </div>
+
+  <form id="editStudentForm" class="grid grid-cols-1 md:grid-cols-2 gap-4 opacity-50 pointer-events-none transition-opacity duration-300">
+    <div>
+      <label class="block text-xs font-medium text-slate-600 mb-1">اسم الطالب ثلاثي (المعدل)</label>
+      <input type="text" id="editStudentName" required class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-sky-500 outline-none" />
+    </div>
+    <div>
+      <label class="block text-xs font-medium text-slate-600 mb-1">رقم الطالب (المعدل)</label>
+      <input type="text" id="editStudentPhone" required class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-sky-500 outline-none" />
+    </div>
+    <div>
+      <label class="block text-xs font-medium text-slate-600 mb-1">رقم هاتف ولي الأمر (المعدل)</label>
+      <input type="tel" id="editParentPhone" required class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-sky-500 outline-none text-left" dir="ltr" />
+    </div>
+    <div>
+      <label class="block text-xs font-medium text-slate-600 mb-1">الصف الدراسي (المعدل)</label>
+      <select id="editAcademicYear" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-sky-500 outline-none">
+        <option value="الصف الأول الاعدادي">الصف الأول الاعدادي</option>
+        <option value="الصف الثاني الاعدادي">الصف الثاني الاعدادي</option>
+        <option value="الصف الثالث الاعدادي">الصف الثالث الاعدادي</option>
+        <option value="الصف الأول الثانوي">الصف الأول الثانوي</option>
+        <option value="الصف الثاني الثانوي">الصف الثاني الثانوي</option>
+        <option value="الصف الثالث الثانوي">الصف الثالث الثانوي</option>
+      </select>
+    </div>
+    
+    <!-- شريط التحكم السفلي (يحتوي على الحفظ والحذف جنباً إلى جنب) -->
+    <div class="md:col-span-2 flex flex-col sm:flex-row justify-between items-center gap-3 mt-4 border-t border-slate-100 pt-4">
+      <button type="submit" class="bg-sky-600 hover:bg-sky-700 text-white px-6 py-2.5 rounded-xl text-sm font-medium transition-colors cursor-pointer w-full sm:w-auto">
+        💾 حفظ التعديلات الجديدة
+      </button>
+      
+      <button type="button" id="btnOpenDeleteModal" class="bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white border border-rose-200 px-5 py-2.5 rounded-xl text-sm font-medium transition-all cursor-pointer w-full sm:w-auto flex items-center justify-center gap-1">
+        🗑️ حذف الطالب نهائياً
+      </button>
+    </div>
+  </form>
+
+  <!-- 🚨 نافذة التأكيد المنبثقة الاحترافية (Custom Modal) المصممة على الصفحة -->
+  <div id="deleteConfirmModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 transition-opacity">
+    <div class="bg-white p-6 rounded-3xl max-w-md w-full border border-slate-100 shadow-xl space-y-4 animate-in fade-in zoom-in-95 duration-200 text-right">
+      <div class="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-500 text-xl mx-auto md:mr-0">
+        ⚠️
+      </div>
+      <div>
+        <h3 class="text-base font-bold text-slate-800">تأكيد الحذف النهائي الحاسم!</h3>
+        <p class="text-xs text-slate-500 mt-2 leading-relaxed">
+          أنت على وشك حذف الطالب <span id="modalStudentName" class="font-bold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded">--</span> نهائياً. 
+          هذا الإجراء سيقوم بتدمير حساب الطالب فوراً، بالإضافة إلى مسح جميع <b>سجلات غيابه، درجات امتحاناته، وفواتيره المالية</b> من السيرفر ولن تتمكن من استعادتها أبداً.
+        </p>
+      </div>
+      <div class="flex gap-3 pt-2">
+        <button type="button" id="btnConfirmDelete" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white text-sm font-medium py-2.5 rounded-xl transition-colors cursor-pointer">
+          نعم، احذف نهائياً
+        </button>
+        <button type="button" id="btnCancelDelete" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm font-medium py-2.5 rounded-xl transition-colors cursor-pointer">
+          إلغاء الأمر
+        </button>
+      </div>
+    </div>
+  </div>
+      </section>
+
+      <!-- تقرير كشف درجات وحضور الطلاب -->
+      <section
+        id="reportSection"
+        class="section-card bg-white p-6 rounded-2xl shadow-sm border border-slate-100"
+      >
+        <div
+          class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4"
+        >
+          <h2
+            class="text-lg font-bold text-slate-800 border-r-4 border-indigo-600 pr-2"
+          >
+            تقرير كشف درجات وحضور الطلاب كامل بالصف
+          </h2>
+
+          <div class="w-full md:w-64">
+            <select
+              id="filterAcademicYear"
+              class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50"
+            >
+              <option value="">-- اختر الصف الدراسي لعرض الطلاب --</option>
+              <option value="الصف الأول الاعدادي">الصف الأول الاعدادي</option>
+              <option value="الصف الثاني الاعدادي">الصف الثاني الاعدادي</option>
+              <option value="الصف الثالث الاعدادي">الصف الثالث الاعدادي</option>
+              <option value="الصف الأول الثانوي">الصف الأول الثانوي</option>
+              <option value="الصف الثاني الثانوي">الصف الثاني الثانوي</option>
+              <option value="الصف الثالث الثانوي">الصف الثالث الثانوي</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-right border-collapse">
+            <thead>
+              <tr
+                class="bg-slate-50 text-slate-600 text-xs border-b border-slate-100"
+              >
+                <th class="p-3">ID</th>
+                <th class="p-3">اسم الطالب</th>
+                <th class="p-3">كود الدخول</th>
+                <th class="p-3">الرقم السري</th>
+                <th class="p-3">مجموع الدرجات</th>
+                <th class="p-3">أيام الحضور</th>
+                <th class="p-3">أيام الغياب</th>
+              </tr>
+            </thead>
+            <tbody id="reportTableBody" class="text-slate-700 text-sm">
+              <tr>
+                <td colspan="6" class="p-4 text-center text-slate-400 italic">
+                  برجاء اختيار صف دراسي من الأعلى لإظهار كشف الطلاب...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <!-- نافذة تأكيد إعادة تعيين العام -->
+    <div id="resetYearModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden opacity-0 transition-opacity duration-300">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-xl transform scale-95 transition-transform duration-300 space-y-6 border border-slate-100 text-center">
+        <div class="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto text-2xl animate-bounce">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <div>
+            <h3 class="text-xl font-bold text-slate-800">تنبيه شديد الخطورة!</h3>
+            <p class="text-sm text-slate-500 mt-2 leading-relaxed">
+                سيتم مسح كافة سجلات الحضور والغياب، الدرجات، الامتحانات، وقائمة الطلاب تماماً لبدء عام جديد. هذه الخطوة لا يمكن التراجع عنها نهائياً.
+            </p>
+        </div>
+        <div class="flex gap-3 justify-center pt-2">
+            <button id="btnConfirmResetFinal" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer shadow-md">
+                💥 نعم، احذف كل شيء
+            </button>
+            <button id="btnCancelReset" class="bg-slate-100 hover:bg-slate-200 text-slate-600 px-6 py-2.5 rounded-xl text-sm font-medium transition-all cursor-pointer">
+                تراجع وإلغاء
+            </button>
+        </div>
+    </div>
+</div>
+
+    <script src="teacher.js"></script>
+  </body>
+</html>

@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>التقارير التفصيلية للصفوف | إدارة المعلم</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body class="bg-slate-50 min-h-screen font-sans text-slate-800 p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto space-y-8">
+        
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl shadow-xs border border-slate-100">
+            <div>
+                <h1 class="text-2xl font-bold text-indigo-900 flex items-center gap-2">
+                    <i class="fa-solid fa-chart-pie text-amber-500"></i>
+                    التقرير التفصيلي الشامل للصفوف الدراسية
+                </h1>
+                <p class="text-sm text-slate-500 mt-1">عرض التواريخ الدقيقة للحضور، درجات كل امتحان، والحالة المادية للتحصيل الشهري</p>
+            </div>
+            
+            <div class="w-full sm:w-72">
+                <select id="reportYearSelect" class="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50 font-medium">
+                    <option value="">-- اختر الصف الدراسي المستهدف --</option>
+                    <option value="الصف الأول الاعدادي">الصف الأول الاعدادي</option>
+                    <option value="الصف الثاني الاعدادي">الصف الثاني الاعدادي</option>
+                    <option value="الصف الثالث الاعدادي">الصف الثالث الاعدادي</option>
+                    <option value="الصف الأول الثانوي">الصف الأول الثانوي</option>
+                    <option value="الصف الثاني الثانوي">الصف الثاني الثانوي</option>
+                    <option value="الصف الثالث الثانوي">الصف الثالث الثانوي</option>
+                </select>
+            </div>
+        </div>
+
+        <section class="bg-white p-6 rounded-3xl shadow-xs border border-slate-100">
+            <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2 border-r-4 border-amber-500 pr-2">
+                <i class="fa-solid fa-calendar-days text-amber-500"></i>
+                بيانات كشف الحضور والغياب اليومي بالتفصيل
+            </h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-right border-collapse min-w-[600px]">
+                    <thead>
+                        <tr class="bg-slate-50 text-slate-600 text-xs border-b border-slate-100">
+                            <th class="p-3">ID الطالب</th>
+                            <th class="p-3">اسم الطالب</th>
+                            <th class="p-3">أيام الحضور (التواريخ)</th>
+                            <th class="p-3">أيام الغياب (التواريخ)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attendanceDetailBody" class="text-slate-700 text-sm">
+                        <tr>
+                            <td colspan="4" class="p-8 text-center text-slate-400 italic">برجاء اختيار صف دراسي من الأعلى أولاً...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="bg-white p-6 rounded-3xl shadow-xs border border-slate-100">
+            <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2 border-r-4 border-emerald-500 pr-2">
+                <i class="fa-solid fa-graduation-cap text-emerald-500"></i>
+                كشف درجات الاختبارات والامتحانات التفصيلي
+            </h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-right border-collapse min-w-[700px]">
+                    <thead>
+                        <tr class="bg-slate-50 text-slate-600 text-xs border-b border-slate-100">
+                            <th class="p-3">ID</th>
+                            <th class="p-3">اسم الطالب</th>
+                            <th class="p-3">اسم الامتحان</th>
+                            <th class="p-3">تاريخ الامتحان</th>
+                            <th class="p-3">الدرجة المحققة</th>
+                            <th class="p-3">ملاحظات المعلم</th>
+                        </tr>
+                    </thead>
+                    <tbody id="gradesDetailBody" class="text-slate-700 text-sm">
+                        <tr>
+                            <td colspan="6" class="p-8 text-center text-slate-400 italic">برجاء اختيار صف دراسي من الأعلى أولاً...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="bg-white p-6 rounded-3xl shadow-xs border border-slate-100">
+            <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2 border-r-4 border-indigo-600 pr-2">
+                <i class="fa-solid fa-wallet text-indigo-600"></i>
+                كشف تسوية وإيرادات المصاريف الشهرية التفصيلي
+            </h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-right border-collapse min-w-[650px]">
+                    <thead>
+                        <tr class="bg-slate-50 text-slate-600 text-xs border-b border-slate-100">
+                            <th class="p-3">ID الطالب</th>
+                            <th class="p-3">اسم الطالب</th>
+                            <th class="p-3">الشهر المالي</th>
+                            <th class="p-3">المبلغ المدفوع</th>
+                            <th class="p-3">تاريخ السداد</th>
+                            <th class="p-3">حالة الدفع</th>
+                        </tr>
+                    </thead>
+                    <tbody id="paymentsDetailBody" class="text-slate-700 text-sm">
+                        <tr>
+                            <td colspan="6" class="p-8 text-center text-slate-400 italic">برجاء اختيار صف دراسي من الأعلى أولاً...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </div>
+
+    <script>
+        // إعداد الاتصال بـ Supabase
+        const SUPABASE_URL = "https://mtwwslednzzseoihsbrb.supabase.co";
+        const SUPABASE_ANON_KEY = "sb_publishable_7kYHCVI_a9jNIOiKTEd-sQ_S9VMkWYg";
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const reportYearSelect = document.getElementById('reportYearSelect');
+        const attendanceDetailBody = document.getElementById('attendanceDetailBody');
+        const gradesDetailBody = document.getElementById('gradesDetailBody');
+        const paymentsDetailBody = document.getElementById('paymentsDetailBody'); // المعرف الجديد
+
+        reportYearSelect.addEventListener('change', async () => {
+            const selectedYear = reportYearSelect.value;
+
+            if (!selectedYear) {
+                attendanceDetailBody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-slate-400 italic">برجاء اختيار صف دراسي من الأعلى أولاً...</td></tr>`;
+                gradesDetailBody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400 italic">برجاء اختيار صف دراسي من الأعلى أولاً...</td></tr>`;
+                paymentsDetailBody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400 italic">برجاء اختيار صف دراسي من الأعلى أولاً...</td></tr>`;
+                return;
+            }
+
+            // مؤشرات التحميل والنبض الأنيميشن
+            attendanceDetailBody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-indigo-600 font-medium animate-pulse">جاري جمع سجلات الحضور التفصيلية...</td></tr>`;
+            gradesDetailBody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-emerald-600 font-medium animate-pulse">جاري تنظيم كشوف الدرجات...</td></tr>`;
+            paymentsDetailBody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-indigo-600 font-medium animate-pulse">جاري فحص الدفاتر والوصولات المالية...</td></tr>`;
+
+            // 1. جلب الطلاب المشتركين في هذا الصف مع (الحضور، الدرجات، والمدفوعات المالية)
+            const { data: students, error: studentError } = await supabaseClient
+                .from('students')
+                .select(`
+                    student_id,
+                    student_name,
+                    attendance (session_date, status),
+                    exam_grades (
+                        student_score,
+                        teacher_notes,
+                        exams (exam_name, exam_date, max_score)
+                    ),
+                    payments (
+                        month_name,
+                        amount_paid,
+                        payment_status,
+                        payment_date
+                    )
+                `)
+                .eq('academic_year', selectedYear);
+
+            if (studentError) {
+                console.error(studentError);
+                alert("حدث خطأ أثناء جلب الداتا التفصيلية المحدثة");
+                return;
+            }
+
+            if (students.length === 0) {
+                const emptyRow = `<tr><td colspan="10" class="p-6 text-center text-slate-400">لا يوجد طلاب مسجلين في هذا الصف حالياً.</td></tr>`;
+                attendanceDetailBody.innerHTML = emptyRow;
+                gradesDetailBody.innerHTML = emptyRow;
+                paymentsDetailBody.innerHTML = emptyRow;
+                return;
+            }
+
+            // === أولاً: رصد وبناء جدول الحضور التفصيلي ===
+            attendanceDetailBody.innerHTML = '';
+            students.forEach(student => {
+                const presentDates = student.attendance
+                    .filter(a => a.status === 'حاضر')
+                    .map(a => `<span class="inline-block bg-blue-50 text-blue-600 font-mono text-xs px-2 py-0.5 rounded-md border border-blue-100">${a.session_date}</span>`)
+                    .join(' ');
+
+                const absentDates = student.attendance
+                    .filter(a => a.status === 'غائب' || a.status === 'مستأذن')
+                    .map(a => `<span class="inline-block bg-red-50 text-red-500 font-mono text-xs px-2 py-0.5 rounded-md border border-red-100">${a.session_date} (${a.status})</span>`)
+                    .join(' ');
+
+                attendanceDetailBody.innerHTML += `
+                    <tr class="border-b border-slate-100 hover:bg-slate-50/50">
+                        <td class="p-3 font-mono text-slate-400">${student.student_id}</td>
+                        <td class="p-3 font-bold text-slate-800">${student.student_name}</td>
+                        <td class="p-3 max-w-md flex flex-wrap gap-1">${presentDates || '<span class="text-slate-300 italic text-xs">لا يوجد</span>'}</td>
+                        <td class="p-3 max-w-md">${absentDates || '<span class="text-slate-300 italic text-xs">لا يوجد</span>'}</td>
+                    </tr>
+                `;
+            });
+
+            // === ثانياً: رصد وبناء جدول الدرجات التفصيلي ===
+            gradesDetailBody.innerHTML = '';
+            let hasGrades = false;
+            students.forEach(student => {
+                if (student.exam_grades && student.exam_grades.length > 0) {
+                    hasGrades = true;
+                    student.exam_grades.forEach(grade => {
+                        const exam = grade.exams || { exam_name: 'امتحان غير معروف', exam_date: '-', max_score: 0 };
+                        
+                        gradesDetailBody.innerHTML += `
+                            <tr class="border-b border-slate-100 hover:bg-slate-50/50">
+                                <td class="p-3 font-mono text-slate-400">${student.student_id}</td>
+                                <td class="p-3 font-medium text-slate-800">${student.student_name}</td>
+                                <td class="p-3 font-bold text-indigo-700">${exam.exam_name}</td>
+                                <td class="p-3 font-mono text-slate-500 text-xs">${exam.exam_date}</td>
+                                <td class="p-3">
+                                    <span class="bg-emerald-50 text-emerald-700 px-2 py-1 rounded-lg border border-emerald-100 font-bold">
+                                        ${grade.student_score} / ${exam.max_score}
+                                    </span>
+                                </td>
+                                <td class="p-3 text-slate-500 text-xs italic">${grade.teacher_notes || '--'}</td>
+                            </tr>
+                        `;
+                    });
+                }
+            });
+            if (!hasGrades) {
+                gradesDetailBody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400">لم يتم رصد أي درجات امتحانات لهذا الصف حتى الآن.</td></tr>`;
+            }
+
+            // === 💵 ثالثاً الجديد: رصد وبناء كشف السداد المالي لكل طلاب الصف ===
+            paymentsDetailBody.innerHTML = '';
+            let hasPayments = false;
+            students.forEach(student => {
+                if (student.payments && student.payments.length > 0) {
+                    hasPayments = true;
+                    student.payments.forEach(pay => {
+                        const badgeColor = pay.payment_status === 'تم الدفع' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-red-50 text-red-600 border-red-100';
+                        
+                        paymentsDetailBody.innerHTML += `
+                            <tr class="border-b border-slate-100 hover:bg-slate-50/50">
+                                <td class="p-3 font-mono text-slate-400">${student.student_id}</td>
+                                <td class="p-3 font-bold text-slate-800">${student.student_name}</td>
+                                <td class="p-3 font-medium text-slate-700">${pay.month_name}</td>
+                                <td class="p-3 font-mono font-bold text-emerald-600">${pay.amount_paid} ج.م</td>
+                                <td class="p-3 font-mono text-slate-500 text-xs">${pay.payment_date || '--'}</td>
+                                <td class="p-3">
+                                    <span class="px-2 py-1 rounded-lg text-xs font-bold border ${badgeColor}">
+                                        ${pay.payment_status}
+                                    </span>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                } else {
+                    // إذا لم يكن للطالب أي رصيد دفع في الجدول المالي، نظهره كـ "لم يدفع" بشكل افتراضي للتنبيه
+                    paymentsDetailBody.innerHTML += `
+                        <tr class="border-b border-slate-100 hover:bg-slate-50/50 bg-rose-50/20">
+                            <td class="p-3 font-mono text-slate-400">${student.student_id}</td>
+                            <td class="p-3 font-bold text-slate-800">${student.student_name}</td>
+                            <td class="p-3 text-slate-400 italic text-xs">لا يوجد سجل مدفوعات متاح</td>
+                            <td class="p-3 font-mono text-slate-400">0 ج.م</td>
+                            <td class="p-3 font-mono text-slate-400">-</td>
+                            <td class="p-3">
+                                <span class="px-2 py-1 rounded-lg text-xs font-bold border bg-red-50 text-red-600 border-red-100">
+                                    لم يدفع
+                                </span>
+                            </td>
+                        </tr>
+                    `;
+                }
+            });
+        });
+    </script>
+</body>
+</html>

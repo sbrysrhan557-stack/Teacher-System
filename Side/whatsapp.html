@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة روابط الواتساب | لوحة تحكم المدرس</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-slate-50 min-h-screen font-sans flex items-center justify-center p-4">
+
+    <div class="max-w-3xl w-full bg-white p-8 rounded-3xl shadow-sm border border-slate-100 space-y-6">
+        
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-100 pb-5 gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                    <span class="w-2.5 h-8 bg-emerald-500 rounded-full"></span> 
+                    إدارة روابط مجموعات الواتساب للصفوف
+                </h1>
+                <p class="text-xs text-slate-500 mt-1 leading-relaxed">
+                    أدخل رابط مجموعة الواتساب الخاص بكل صف دراسي، وسيتم تحديثه تلقائياً في لوحة تحكم الطالب (Dashboard).
+                </p>
+            </div>
+            <a href="../teacher/teacher.html" class="bg-slate-100 hover:bg-slate-200 text-slate-600 px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap">
+                ⬅️ العودة للوحة الرئيسية
+            </a>
+        </div>
+
+        <form id="whatsappSettingsForm" class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="whatsappInputsContainer">
+                <div class="col-span-1 md:col-span-2 text-center text-slate-400 py-12 animate-pulse font-medium text-sm">
+                    ⏳ جاري قراءة الروابط الحالية من قاعدة البيانات...
+                </div>
+            </div>
+
+            <div class="text-left border-t border-slate-50 pt-4">
+                <button type="submit" id="btnSaveAll" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-2xl text-sm font-bold transition-all shadow-md shadow-emerald-600/10 cursor-pointer">
+                    💾 حفظ وتحديث روابط الصفوف بالكامل
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // 1. إعداد الاتصال بـ Supabase
+        const SUPABASE_URL = "https://mtwwslednzzseoihsbrb.supabase.co";
+        const SUPABASE_ANON_KEY = "sb_publishable_7kYHCVI_a9jNIOiKTEd-sQ_S9VMkWYg";
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const whatsappInputsContainer = document.getElementById('whatsappInputsContainer');
+        const whatsappSettingsForm = document.getElementById('whatsappSettingsForm');
+        const btnSaveAll = document.getElementById('btnSaveAll');
+
+        // 2. دالة لجلب الروابط المخزنة في الـ Database وعرضها في الخانات فور فتح الصفحة
+        async function loadWhatsappSettings() {
+            if (!whatsappInputsContainer) return;
+
+            const { data, error } = await supabaseClient
+                .from('whatsapp_groups')
+                .select('*');
+
+            if (error) {
+                whatsappInputsContainer.innerHTML = `
+                    <div class="col-span-1 md:col-span-2 text-red-500 text-center py-6 font-bold">
+                        ❌ فشل تحميل الروابط، تأكد من وجود جدول whatsapp_groups في Supabase
+                    </div>`;
+                return;
+            }
+
+            // بناء خانات الإدخال ديناميكياً للصفوف الستة
+            whatsappInputsContainer.innerHTML = '';
+            data.forEach(item => {
+                whatsappInputsContainer.innerHTML += `
+                    <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-1.5 transition-all hover:border-slate-200">
+                        <label class="block text-xs font-extrabold text-slate-700">${item.academic_year}</label>
+                        <input type="url" placeholder="https://chat.whatsapp.com/..." 
+                               data-year="${item.academic_year}" 
+                               value="${item.whatsapp_link || ''}" 
+                               class="whatsapp-year-input w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-emerald-500 outline-none bg-white text-left text-slate-800 font-mono" dir="ltr">
+                    </div>
+                `;
+            });
+        }
+
+        // 3. حدث حفظ الروابط كلها دفعة واحدة عند عمل Submit للفورم
+        if (whatsappSettingsForm) {
+            whatsappSettingsForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                // تغيير شكل الزرار أثناء الحفظ
+                btnSaveAll.innerHTML = `⏳ جاري حفظ الروابط وتحديثها...`;
+                btnSaveAll.disabled = true;
+
+                const inputs = document.querySelectorAll('.whatsapp-year-input');
+                const promises = [];
+
+                inputs.forEach(input => {
+                    const year = input.getAttribute('data-year');
+                    const link = input.value.trim();
+
+                    // إنشاء طلب تحديث (Update) لكل صف دراسي
+                    const updatePromise = supabaseClient
+                        .from('whatsapp_groups')
+                        .update({ whatsapp_link: link })
+                        .eq('academic_year', year);
+                        
+                    promises.push(updatePromise);
+                });
+
+                // تشغيل كل طلبات التحديث في نفس الوقت لسرعة التنفيذ (Promise.all)
+                const results = await Promise.all(promises);
+                const hasError = results.some(res => res.error);
+
+                // إعادة الزرار لوضعه الطبيعي
+                btnSaveAll.innerHTML = `💾 حفظ وتحديث روابط الصفوف بالكامل`;
+                btnSaveAll.disabled = false;
+
+                if (hasError) {
+                    alert("❌ حدث خطأ أثناء حفظ بعض الروابط، يرجى مراجعة الاتصال والمحاولة مرة أخرى.");
+                } else {
+                    alert("✅ ممتاز! تم تحديث روابط مجموعات الواتساب لكل المراحل بنجاح، وستظهر فوراً في الـ Dashboard الخاصة بالطلاب!");
+                    loadWhatsappSettings(); // إعادة تحميل الروابط للتأكيد والتحقق
+                }
+            });
+        }
+
+        // تشغيل الدالة فوراً عند فتح الصفحة لقراءة البيانات
+        loadWhatsappSettings();
+    </script>
+</body>
+</html>

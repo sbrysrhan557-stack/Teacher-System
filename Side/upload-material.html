@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>رفع المذكرات والملخصات | لوحة المعلم</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-slate-50 min-h-screen font-sans p-4 md:p-8">
+    <div class="max-w-4xl mx-auto space-y-6">
+        
+        <div class="bg-white p-6 rounded-3xl shadow-xs border border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+                <h1 class="text-xl font-bold text-slate-800">📚 بنك المذكرات والملخصات الرقمية</h1>
+                <p class="text-xs text-slate-500 mt-1">ارفع روابط المذكرات أو ملفات الـ PDF (جوجل درايف) لطلابك حسب صفوفهم.</p>
+            </div>
+            <a href="../teacher/teacher.html" class="bg-slate-100 hover:bg-slate-200 text-slate-600 px-4 py-2 rounded-xl text-xs font-bold transition-all">⬅️ اللوحة الرئيسية</a>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <form id="materialForm" class="bg-white p-6 rounded-3xl border border-slate-100 space-y-4 md:col-span-1 h-fit">
+                <h3 class="text-sm font-bold text-slate-700 border-r-4 border-emerald-500 pr-2">إضافة مذكرة جديدة</h3>
+                
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">الصف الدراسي</label>
+                    <select id="matAcademicYear" required class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-emerald-500 outline-none bg-white">
+                        <option value="الصف الأول الاعدادي">الصف الأول الاعدادي</option>
+                        <option value="الصف الثاني الاعدادي">الصف الثاني الاعدادي</option>
+                        <option value="الصف الثالث الاعدادي">الصف الثالث الاعدادي</option>
+                        <option value="الصف الأول الثانوي">الصف الأول الثانوي</option>
+                        <option value="الصف الثاني الثانوي">الصف الثاني الثانوي</option>
+                        <option value="الصف الثالث الثانوي">الصف الثالث الثانوي</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">اسم المذكرة / الملخص</label>
+                    <input type="text" id="matName" placeholder="مثال: ملخص قوانين الفصل الأول" required class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-emerald-500 outline-none bg-white">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">رابط التحميل (Google Drive / Dropbox)</label>
+                    <input type="url" id="matLink" placeholder="https://drive.google.com/..." required class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-emerald-500 outline-none bg-white text-left" dir="ltr">
+                </div>
+
+                <button type="submit" id="btnSaveMaterial" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer">➕ نشر المذكرة للطلاب</button>
+            </form>
+
+            <div class="bg-white p-6 rounded-3xl border border-slate-100 md:col-span-2 space-y-4">
+                <h3 class="text-sm font-bold text-slate-700 border-r-4 border-indigo-600 pr-2">المذكرات المنشورة حالياً</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-right text-xs border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-500 font-medium border-b border-slate-100">
+                                <th class="p-3">اسم المذكرة</th>
+                                <th class="p-3">الصف الدراسي</th>
+                                <th class="p-3 text-center">التحكم</th>
+                            </tr>
+                        </thead>
+                        <tbody id="materialsTableBody" class="text-slate-700">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://mtwwslednzzseoihsbrb.supabase.co";
+        const SUPABASE_ANON_KEY = "sb_publishable_7kYHCVI_a9jNIOiKTEd-sQ_S9VMkWYg";
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const materialForm = document.getElementById('materialForm');
+        const materialsTableBody = document.getElementById('materialsTableBody');
+
+        // جلب وعرض المذكرات للمدرس
+        async function loadMaterials() {
+            const { data, error } = await supabaseClient.from('study_materials').select('*').order('created_at', {ascending: false});
+            if (error) return;
+            
+            materialsTableBody.innerHTML = '';
+            if(data.length === 0) {
+                materialsTableBody.innerHTML = `<tr><td colspan="3" class="text-center p-4 text-slate-400 italic">لا توجد مذكرات مرفوعة حالياً.</td></tr>`;
+                return;
+            }
+
+            data.forEach(item => {
+                materialsTableBody.innerHTML += `
+                    <tr class="border-b border-slate-100 hover:bg-slate-50">
+                        <td class="p-3 font-bold text-slate-800">${item.material_name}</td>
+                        <td class="p-3"><span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-[10px]">${item.academic_year}</span></td>
+                        <td class="p-3 text-center flex justify-center gap-2">
+                            <a href="${item.material_link}" target="_blank" class="bg-indigo-50 text-indigo-600 px-2 py-1 rounded hover:bg-indigo-100">🔗 فتح</a>
+                            <button onclick="deleteMaterial(${item.material_id})" class="bg-red-50 text-red-600 px-2 py-1 rounded hover:bg-red-100 cursor-pointer">🗑️ حذف</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // إضافة مذكرة جديدة
+        materialForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btnSaveMaterial');
+            btn.disabled = true;
+
+            const { error } = await supabaseClient.from('study_materials').insert([{
+                academic_year: document.getElementById('matAcademicYear').value,
+                material_name: document.getElementById('matName').value.trim(),
+                material_link: document.getElementById('matLink').value.trim()
+            }]);
+
+            btn.disabled = false;
+            if (error) alert("خطأ أثناء الحفظ: " + error.message);
+            else {
+                alert("✅ تم نشر المذكرة بنجاح!");
+                materialForm.reset();
+                loadMaterials();
+            }
+        });
+
+        // حذف مذكرة
+        window.deleteMaterial = async (id) => {
+            if(!confirm("هل أنت متأكد من حذف هذه المذكرة؟")) return;
+            const { error } = await supabaseClient.from('study_materials').delete().eq('material_id', id);
+            if(!error) loadMaterials();
+        }
+
+        loadMaterials();
+    </script>
+</body>
+</html>

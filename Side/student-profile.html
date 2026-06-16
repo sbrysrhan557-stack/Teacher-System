@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الملف الشامل للطالب | لوحة تحكم المدرس</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body class="bg-slate-50 min-h-screen font-sans p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto space-y-6">
+        
+        <div class="bg-white p-6 rounded-3xl shadow-xs border border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="w-full md:w-auto">
+                <h1 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                    <span class="w-2 h-7 bg-indigo-600 rounded-full"></span> الـملف الشامل للطلاب
+                </h1>
+                <p class="text-xs text-slate-500 mt-1">ابحث عن أي طالب لعرض تقرير تفصيلي كامل عن الحضور، الدرجات، والمصاريف المالية.</p>
+            </div>
+            
+            <div class="w-full md:w-1/2 flex gap-2">
+                <input type="text" id="profileSearchInput" placeholder="اكتب: ID الطالب، أو كود الدخول (STD-...)، أو اسم الطالب" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+                <button id="btnSearchProfile" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap cursor-pointer">
+                    🔍 عرض الملف
+                </button>
+            </div>
+        </div>
+
+        <div id="searchPlaceholder" class="bg-white p-12 text-center rounded-3xl border border-dashed border-slate-200 text-slate-400 font-medium text-sm">
+            🔍 برجاء إدخال بيانات الطالب في الأعلى للبحث وعرض الملف الشامل المالي والدراسي...
+        </div>
+
+        <div id="profileContainer" class="hidden space-y-6">
+            
+            <div class="bg-white p-6 rounded-3xl shadow-xs border border-slate-100 grid grid-cols-1 md:grid-cols-3 gap-6 relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-24 h-24 bg-indigo-500/5 rounded-full -mr-5 -mt-5"></div>
+                
+                <div class="md:col-span-2 space-y-2">
+                    <span id="pAcademicYear" class="bg-indigo-50 text-indigo-700 text-xs font-bold px-3 py-1 rounded-lg">--</span>
+                    <h2 id="pStudentName" class="text-2xl font-extrabold text-slate-800 pt-1">--</h2>
+                    <p class="text-sm text-slate-400 font-mono">الرقم التعريفي (ID): <span id="pStudentId" class="font-bold text-slate-700">--</span></p>
+                </div>
+                
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-2 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-slate-500">كود الدخول:</span>
+                        <span id="pLoginCode" class="font-mono font-bold text-slate-800 bg-white px-2 py-0.5 rounded border border-slate-100">--</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-500">كلمة المرور:</span>
+                        <span id="pPassword" class="font-mono font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-100">--</span>
+                    </div>
+                </div>
+
+                <div class="border-t border-slate-100 pt-4 md:col-span-3 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-slate-600">
+                    <div>📱 <span class="font-medium text-slate-400">هاتف الطالب:</span> <span id="pStudentPhone" class="font-mono">--</span></div>
+                    <div>👨‍👦 <span class="font-medium text-slate-400">هاتف ولي الأمر:</span> <span id="pParentPhone" class="font-mono">--</span></div>
+                </div>
+
+                <div class="border-t border-rose-100 bg-rose-50/30 -mx-6 -mb-6 p-4 md:col-span-3 flex justify-between items-center text-sm">
+                    <div class="text-rose-700 font-medium flex items-center gap-1">
+                        <i class="fa-solid fa-triangle-exclamation"></i> منطقة الإجراءات الحساسة
+                    </div>
+                    <button id="btnDeleteStudent" class="bg-rose-100 hover:bg-rose-600 text-rose-700 hover:text-white px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 border border-rose-200 shadow-sm">
+                        <i class="fa-solid fa-trash-can"></i> حذف هذا الطالب نهائياً من السيستم
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <div class="bg-white p-5 rounded-2xl border border-slate-100 text-center space-y-1">
+                    <p class="text-xs font-medium text-slate-400">حضور</p>
+                    <p id="statPresent" class="text-xl font-black text-emerald-600">0 أيام</p>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-slate-100 text-center space-y-1">
+                    <p class="text-xs font-medium text-slate-400">غياب</p>
+                    <p id="statAbsent" class="text-xl font-black text-red-500">0 أيام</p>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-slate-100 text-center space-y-1">
+                    <p class="text-xs font-medium text-slate-400">نسبة الحضور</p>
+                    <p id="statRatio" class="text-xl font-black text-indigo-600">0%</p>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-slate-100 text-center space-y-1">
+                    <p class="text-xs font-medium text-slate-400">الدرجات المكتسبة</p>
+                    <p id="statGrades" class="text-xl font-black text-sky-600">0</p>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-slate-100 text-center space-y-1">
+                    <p class="text-xs font-medium text-slate-400">مالية الشهر الحالي</p>
+                    <p id="statPaymentStatus" class="text-xl font-black text-slate-400">--</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                
+                <div class="bg-white p-6 rounded-3xl border border-slate-100 space-y-4 lg:col-span-2">
+                    <h3 class="text-base font-bold text-slate-800 border-r-4 border-amber-500 pr-2">سجل المصاريف الشهرية</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-right text-sm border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 text-slate-500 font-medium border-b border-slate-100">
+                                    <th class="p-2.5">الشهر الدراسي</th>
+                                    <th class="p-2.5">المبلغ المدفوع</th>
+                                    <th class="p-2.5">تاريخ الدفع</th>
+                                    <th class="p-2.5">حالة السداد</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pPaymentsTableBody" class="text-slate-700"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-3xl border border-slate-100 space-y-4">
+                    <h3 class="text-base font-bold text-slate-800 border-r-4 border-indigo-600 pr-2">سجل الحضور والغياب</h3>
+                    <div class="overflow-x-auto max-h-72 overflow-y-auto">
+                        <table class="w-full text-right text-sm border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 text-slate-500 font-medium border-b border-slate-100">
+                                    <th class="p-2.5">التاريخ</th>
+                                    <th class="p-2.5">الحالة</th>
+                                    <th class="p-2.5">التأخير</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pAttendanceTableBody" class="text-slate-700"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-3xl border border-slate-100 space-y-4">
+                    <h3 class="text-base font-bold text-slate-800 border-r-4 border-emerald-500 pr-2">سجل درجات الاختبارات والامتحانات</h3>
+                    <div class="overflow-x-auto max-h-72 overflow-y-auto">
+                        <table class="w-full text-right text-sm border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 text-slate-500 font-medium border-b border-slate-100">
+                                    <th class="p-2.5">الامتحان</th>
+                                    <th class="p-2.5">الدرجة</th>
+                                    <th class="p-2.5">النهائية</th>
+                                    <th class="p-2.5">ملاحظات المعلم</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pGradesTableBody" class="text-slate-700"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script src="./student-profile.js"></script>
+</body>
+</html>
