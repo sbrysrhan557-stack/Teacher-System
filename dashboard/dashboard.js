@@ -7,7 +7,7 @@ const SUPABASE_URL = "https://mtwwslednzzseoihsbrb.supabase.co";
         const studentYear = localStorage.getItem('current_student_year');
 
         // حماية لو لم يسجل دخول
-        if (!studentId) { window.location.href = "login.html"; }
+        if (!studentId) { window.location.href = "../index.html"; }
 
         document.getElementById('welcomeMessage').textContent = `مرحباً بك يا ${studentName}`;
         document.getElementById('studentYearDisplay').textContent = `الصف الدراسي: ${studentYear}`;
@@ -105,7 +105,7 @@ const SUPABASE_URL = "https://mtwwslednzzseoihsbrb.supabase.co";
 
         // زرار تسجيل الخروج
         document.getElementById('logoutBtn').addEventListener('click', () => {
-            localStorage.clear(); window.location.href = "../login/login.html";
+            localStorage.clear(); window.location.href = "../index.html";
         });
 
         // تشغيل كافة العمليات عند الفتح فوراً

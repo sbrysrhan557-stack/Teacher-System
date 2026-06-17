@@ -1,5 +1,16 @@
+// حفظ بيانات تسجيل الدخول في local Storage
+// ===========================================
 if (localStorage.getItem('is_teacher') !== 'true') {
     window.location.href = "../index.html";
+}
+const currentTeacherId = localStorage.getItem('teacher_id'); // جلب ID المدرس
+// جلب اسم المدرس من localStorage
+const teacherName = localStorage.getItem('teacher_name') || "مدرس";
+
+// وضع الاسم في العنصر المخصص له في الـ HTML
+const teacherNameDisplay = document.getElementById('teacherNameDisplay');
+if (teacherNameDisplay) {
+    teacherNameDisplay.textContent = teacherName;
 }
 
 // ==========================================
@@ -73,19 +84,20 @@ if (addStudentForm) {
     const randomCode = "STD-" + Math.floor(1000 + Math.random() * 9000);
     const randomPassword = Math.floor(100000 + Math.random() * 900000).toString();
 
-    const { data, error } = await supabaseClient
-      .from("students")
-      .insert([
-        {
-          student_name: name,
-          student_phone: StudentPhone,
-          login_code: randomCode,
-          password: randomPassword,
-          parent_phone: phone,
-          academic_year: academicYear,
-        },
-      ])
-      .select();
+    // أي دالة تجلب بيانات الطلاب، أضف لها هذا الشرط:
+const currentTeacherId = localStorage.getItem('teacher_id');
+
+const { data, error } = await supabaseClient
+    .from('students')
+      .insert([{
+        student_name: name,
+        student_phone: StudentPhone,
+        parent_phone: phone,
+        academic_year: academicYear,
+        login_code: randomCode,
+        password: randomPassword,
+        teacher_id: currentTeacherId // الربط ضروري جداً
+      }]); // <--- هذا الشرط يضمن أن المدرس يرى طلابه فقط
 
     if (error) {
       alert("❌ حدث خطأ أثناء إضافة الطالب: " + error.message);
@@ -116,9 +128,10 @@ if (attendanceAcademicYear) {
     bulkAttendanceTableBody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-indigo-600 font-medium animate-pulse">جاري سحب دفتر أسماء الصف...</td></tr>`;
 
     const { data: students, error } = await supabaseClient
-      .from('students')
+      .from('students') // نستخدم جدول الطلاب مباشرة
       .select('student_id, student_name')
-      .eq('academic_year', selectedYear);
+      .eq('teacher_id', currentTeacherId)
+      .eq('academic_year', selectedYear); // الفلترة الصحيحة
 
     if (error) {
       bulkAttendanceTableBody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-red-500">حدث خطأ أثناء تحميل كشف الأسماء.</td></tr>`;
@@ -134,6 +147,7 @@ if (attendanceAcademicYear) {
       return;
     }
 
+    // بناء الجدول
     bulkAttendanceTableBody.innerHTML = '';
     students.forEach(student => {
       bulkAttendanceTableBody.innerHTML += `
@@ -283,8 +297,14 @@ if (bulkGradesForm) {
 
     gradeRows.forEach(row => {
       const studentId = Number(row.getAttribute('data-id'));
-      const studentScore = Number(row.querySelector('.student-score-input').value);
       const teacherNotes = row.querySelector('.student-notes-input').value.trim();
+      // درجه الامتحان
+      const scoreInput = row.querySelector('.student-score-input');
+
+      // إذا كانت القيمة فارغة أو غير محددة، نعتبرها 0، وإلا نأخذ القيمة المدخلة
+    const studentScore = (scoreInput.value === '' || scoreInput.value === null) 
+        ? 0 
+        : Number(scoreInput.value);
 
       recordsToInsert.push({
         student_id: studentId,
@@ -368,36 +388,6 @@ if (filterAcademicYear) {
   });
 }
 
-if (navSearchInput) {
-  navSearchInput.addEventListener("keypress", async (e) => {
-    if (e.key === "Enter") {
-      const query = navSearchInput.value.trim();
-      
-      if (!query) return;
-
-      if (!isNaN(query) && query !== "") {
-        window.open(`student_history.html?id=${query}`, '_blank');
-        return;
-      }
-
-      if (filterAcademicYear) filterAcademicYear.value = "";
-      if (reportTableBody) reportTableBody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-amber-600 font-medium animate-pulse">جاري البحث في قاعدة البيانات كاملة...</td></tr>`;
-
-      const { data, error } = await supabaseClient
-        .from("student_summary_report")
-        .select("*")
-        .ilike("student_name", `%${query}%`);
-
-      if (error) {
-        console.error(error);
-        if (reportTableBody) reportTableBody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-red-500">حدث خطأ أثناء عملية البحث.</td></tr>`;
-        return;
-      }
-
-      renderReportTable(data);
-    }
-  });
-}
 
 // دالة توجيه الواتساب الخاصة بالزرار داخل الجدول
 async function sendGroupLink(studentId) {
@@ -502,7 +492,6 @@ if (editStudentForm) {
         student_phone: editStudentPhone.value.trim(),
         parent_phone: editParentPhone.value.trim(),
         academic_year: editAcademicYear.value,
-        whatsapp_link: document.getElementById("editWhatsappLink") ? document.getElementById("editWhatsappLink").value.trim() : null
       })
       .eq("student_id", currentEditingStudentId);
 
@@ -916,6 +905,7 @@ if (btnExportStudentsExcel) {
 
 // تشغيل تحليلات اللوحة فور الفتح لراحة المعلم
 loadAnalyticsDashboard();
+
 
 
 // معرفات العناصر

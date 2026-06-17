@@ -17,17 +17,14 @@ const errorMessage = document.getElementById('errorMessage');
 // 3. الاستماع لحدث إرسال الفورم (Submit)
 // ==========================================
 loginForm.addEventListener('submit', async (e) => {
-    e.preventDefault(); // منع الصفحة من الريفرش الافتراضي عند الإرسال
+    e.preventDefault();
     
-    // إخفاء رسالة الخطأ القديمة إن وجدت
     errorMessage.classList.add('hidden');
     errorMessage.textContent = "";
 
-    // جلب القيم وتنظيف الفراغات الزائدة
     const code = loginCodeInput.value.trim();
     const pass = passwordInput.value.trim();
 
-    // التحقق من أن الحقول ليست فارغة
     if (!code || !pass) {
         errorMessage.textContent = "❌ برجاء إدخال كود المستخدم والرقم السري.";
         errorMessage.classList.remove('hidden');
@@ -35,57 +32,53 @@ loginForm.addEventListener('submit', async (e) => {
     }
 
     try {
-        // الاستعلام من جدول الطلاب للبحث عن الكود والباسورد المتطابقين
-        // جلبنا عمود الـ role لمعرفة هل الحساب الحالي (مدرس أم طالب)
-        const { data, error } = await supabaseClient
-            .from('students')
-            .select('student_id, student_name, academic_year, role')
+        // أولاً: محاولة تسجيل الدخول كمدرس
+        const { data: teacherData, error: teacherError } = await supabaseClient
+            .from('teachers')
+            .select('teacher_id, teacher_name')
             .eq('login_code', code)
-            .eq('password', pass) 
-            .single(); // متوقع يرجع سجل واحد فقط لأن الكود فريد (Unique)
+            .eq('password', pass)
+            .single();
 
-        if (error || !data) {
-            // لو الكود أو الباسورد خطأ أو الحساب غير موجود
-            errorMessage.textContent = "❌ الكود أو الرقم السري غير صحيح، تأكد وأعد المحاولة.";
-            errorMessage.classList.remove('hidden');
+        if (teacherData) {
+            // إذا وجد المدرس
+            localStorage.clear();
+            localStorage.setItem('is_teacher', 'true');
+            localStorage.setItem('teacher_id', teacherData.teacher_id); // هام جداً
+            localStorage.setItem('teacher_name', teacherData.teacher_name);
+
+            alert(`🔐 مرحباً بك يا مستر ${teacherData.teacher_name}، جاري فتح لوحة التحكم...`);
+            window.location.href = "./teacher/teacher.html";
             return;
         }
 
-        // ==========================================
-        // 4. نظام التوجيه وحفظ الجلسة (Routing)
-        // ==========================================
-        
-        // مسح أي بيانات قديمة مخزنة في المتصفح منعاً للتداخل
-        localStorage.clear();
+        // ثانياً: إذا لم يكن مدرساً، نحاول تسجيل الدخول كطالب
+        const { data: studentData, error: studentError } = await supabaseClient
+            .from('students')
+            .select('student_id, student_name, academic_year')
+            .eq('login_code', code)
+            .eq('password', pass)
+            .single();
 
-        // التوجيه بناءً على الرتبة (role)
-        if (data.role === 'teacher') {
-            // أ) إذا كان المستخدم هو المدرس:
-            console.log("تم تسجيل دخول المعلم بنجاح:", data.student_name);
-            
-            // حفظ راية (Flag) تثبت أن المستخدم مدرس لحماية الصفحات
-            localStorage.setItem('is_teacher', 'true');
-            localStorage.setItem('teacher_name', data.student_name);
+        if (studentData) {
+            // إذا وجد الطالب
+            localStorage.clear();
+            localStorage.setItem('current_student_id', studentData.student_id);
+            localStorage.setItem('current_student_name', studentData.student_name);
+            localStorage.setItem('current_student_year', studentData.academic_year);
 
-            alert(`🔐 مرحباً بك يا مستر ${data.student_name}، جاري فتح لوحة تحكم المعلم...`);
-            window.location.href = "./teacher/teacher.html"; 
-
-        } else {
-            // ب) إذا كان المستخدم طالباً عادياً:
-            console.log("تم تسجيل الدخول بنجاح للطالب:", data.student_name);
-            
-            // حفظ بيانات الطالب في الـ LocalStorage لاستخدامها في صفحة الـ dashboard
-            localStorage.setItem('current_student_id', data.student_id);
-            localStorage.setItem('current_student_name', data.student_name);
-            localStorage.setItem('current_student_year', data.academic_year);
-
-            alert(`👋 أهلاً بك يا ${data.student_name}، جاري الانتقال للوحة المتابعة الخاصة بك...`);
-            window.location.href = "dashboard/dashboard.html"; 
+            alert(`👋 أهلاً بك يا ${studentData.student_name}، جاري الانتقال للوحة المتابعة...`);
+            window.location.href = "dashboard/dashboard.html";
+            return;
         }
 
+        // إذا لم يتم العثور عليه في أي من الجدولين
+        errorMessage.textContent = "❌ الكود أو الرقم السري غير صحيح.";
+        errorMessage.classList.remove('hidden');
+
     } catch (err) {
-        console.error("خطأ غير متوقع أثناء تسجيل الدخول:", err);
-        errorMessage.textContent = "❌ حدث خطأ غير متوقع في الاتصال بالشبكة، يرجى المحاولة لاحقاً.";
+        console.error("خطأ أثناء تسجيل الدخول:", err);
+        errorMessage.textContent = "❌ حدث خطأ في الاتصال، يرجى المحاولة لاحقاً.";
         errorMessage.classList.remove('hidden');
     }
 });
