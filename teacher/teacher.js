@@ -13,6 +13,23 @@ if (teacherNameDisplay) {
     teacherNameDisplay.textContent = teacherName;
 }
 
+// ===========================================
+// 0. دالة جلب الطلاب (مربوطة بالمدرس الحالي فقط)
+// ===========================================
+async function loadMyStudents() {
+    const { data, error } = await supabaseClient
+        .from('students')
+        .select('*')
+        .eq('teacher_id', currentTeacherId); // هنا الفلترة الأساسية
+
+    if (error) {
+        console.error("خطأ في جلب الطلاب:", error);
+    } else {
+        console.log("طلاب المدرس الحالي:", data);
+        // قم بتحديث الجدول في الـ HTML هنا
+    }
+}
+
 // ==========================================
 // 1. إعداد الاتصال بـ Supabase والمتغيرات العامة
 // ==========================================
@@ -55,13 +72,6 @@ const editParentPhone = document.getElementById("editParentPhone");
 const editAcademicYear = document.getElementById("editAcademicYear");
 
 let currentEditingStudentId = null; // لحفظ الـ ID الجاري تعديله
-
-// السايدبار للموبايل
-const mainSidebar = document.getElementById('mainSidebar');
-const openSidebarBtn = document.getElementById('openSidebarBtn');
-const closeSidebarBtn = document.getElementById('closeSidebarBtn');
-const sidebarOverlay = document.getElementById('sidebarOverlay');
-const mobileNavLinks = document.querySelectorAll('.mobile-nav-link');
 
 // تعيين تاريخ اليوم تلقائياً في خانة الغياب
 if (attendanceDateInput) {
@@ -233,7 +243,9 @@ if (examAcademicYear) {
     const { data: students, error } = await supabaseClient
       .from('students')
       .select('student_id, student_name')
-      .eq('academic_year', selectedYear);
+      .eq('academic_year', selectedYear)
+      .eq('teacher_id', currentTeacherId);
+
 
     if (error) {
       bulkStudentsTableBody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-red-500">حدث خطأ أثناء تحميل الطلاب.</td></tr>`;
@@ -376,7 +388,8 @@ if (filterAcademicYear) {
     const { data, error } = await supabaseClient
       .from("student_summary_report")
       .select("*")
-      .eq("academic_year", selectedYear);
+      .eq("academic_year", selectedYear)
+      .eq('teacher_id', currentTeacherId);
 
     if (error) {
       console.error("خطأ في جلب التقرير:", error.message);
@@ -440,7 +453,7 @@ if (btnFetchStudent) {
     btnFetchStudent.innerHTML = `⏳ جاري البحث...`;
     btnFetchStudent.disabled = true;
 
-    let queryBuilder = supabaseClient.from("students").select("*");
+    let queryBuilder = supabaseClient.from("students").select("*").eq('teacher_id', currentTeacherId);
 
     if (!isNaN(searchVal) && searchVal !== "") {
       queryBuilder = queryBuilder.eq("student_id", Number(searchVal));
@@ -532,16 +545,16 @@ if (btnConfirmDelete) {
       btnConfirmDelete.disabled = true;
 
       // أ. تنظيف وحذف كافة السجلات المعتمدة على الـ ID لمنع قيود مفاتيح الربط (Foreign Key constraints)
-      await supabaseClient.from('attendance').delete().eq('student_id', currentEditingStudentId);
-      await supabaseClient.from('exam_grades').delete().eq('student_id', currentEditingStudentId);
-      await supabaseClient.from('payments').delete().eq('student_id', currentEditingStudentId);
+      await supabaseClient.from('attendance').delete().eq('student_id', currentEditingStudentId).eq('teacher_id', currentTeacherId);
+      await supabaseClient.from('exam_grades').delete().eq('student_id', currentEditingStudentId).eq('teacher_id', currentTeacherId);
+      await supabaseClient.from('payments').delete().eq('student_id', currentEditingStudentId).eq('teacher_id', currentTeacherId);
 
       // ب. مسح الطالب كلياً من الجدول الرئيسي
       const { error } = await supabaseClient
         .from("students")
         .delete()
         .eq("student_id", currentEditingStudentId)
-        .neq('login_code', 'ADMIN-2026'); // هنا بنقوله احذف الكل "ما عدا" كود المدرس بتاعك
+        .eq('teacher_id', currentTeacherId);
 
       if (error) throw error;
 
@@ -613,10 +626,10 @@ if (btnConfirmResetFinal) {
     btnConfirmResetFinal.disabled = true;
 
     try {
-      await supabaseClient.from("exam_grades").delete().neq("student_id", 0);
-      await supabaseClient.from("attendance").delete().neq("student_id", 0);
-      await supabaseClient.from("exams").delete().neq("exam_id", 0);
-      await supabaseClient.from("students").delete().neq("student_id", 0);
+      await supabaseClient.from("exam_grades").delete().neq("student_id", 0).eq('teacher_id', currentTeacherId);
+      await supabaseClient.from("attendance").delete().neq("student_id", 0).eq('teacher_id', currentTeacherId);
+      await supabaseClient.from("exams").delete().neq("exam_id", 0).eq('teacher_id', currentTeacherId);
+      await supabaseClient.from("students").delete().neq("student_id", 0).eq('teacher_id', currentTeacherId);
 
       alert("✅ عظيم! تم تصفير كافة قواعد البيانات بنجاح تام، والنظام جاهز الآن لاستقبال العام الدراسي الجديد!");
       location.reload();
@@ -633,6 +646,13 @@ if (btnConfirmResetFinal) {
 // ==========================================
 // === الجزء السابع: التحكم في الـ Sidebar للموبايل ===
 // ==========================================
+
+// السايدبار للموبايل
+const mainSidebar = document.getElementById('mainSidebar');
+const openSidebarBtn = document.getElementById('openSidebarBtn');
+const closeSidebarBtn = document.getElementById('closeSidebarBtn');
+const sidebarOverlay = document.getElementById('sidebarOverlay');
+
 function openSidebar() {
   if(mainSidebar) mainSidebar.classList.remove('translate-x-full');
   if(sidebarOverlay) sidebarOverlay.classList.remove('hidden');
@@ -644,15 +664,13 @@ function closeSidebar() {
 }
 
 if (openSidebarBtn) openSidebarBtn.addEventListener('click', openSidebar);
-if (closeSidebarBtn) closeSidebarBtn.addEventListener('click', closeSidebar);
 if (sidebarOverlay) sidebarOverlay.addEventListener('click', closeSidebar);
+// if (closeSidebarBtn) closeSidebarBtn.addEventListener('click', closeSidebar);
 
-mobileNavLinks.forEach(link => {
-  link.addEventListener('click', () => {
-    if (window.innerWidth < 1024) {
-      closeSidebar();
-    }
-  });
+// إغلاق القائمة عند الضغط على أي رابط بداخلها
+const sidebarLinks = mainSidebar.querySelectorAll('a');
+sidebarLinks.forEach(link => {
+    link.addEventListener('click', closeSidebar);
 });
 
 // ==========================================
@@ -667,7 +685,7 @@ async function loadWhatsappSettings() {
 
   const { data, error } = await supabaseClient
     .from('whatsapp_groups')
-    .select('*');
+    .select('*').eq('teacher_id', currentTeacherId);
 
   if (error) {
     whatsappInputsContainer.innerHTML = `<div class="col-span-2 text-red-500 text-center">❌ فشل تحميل الروابط من قاعدة البيانات</div>`;
@@ -733,19 +751,22 @@ loadWhatsappSettings();
 // 1. دالة حساب وعرض الإحصائيات الحية من الجداول في لوحة التحكم المعلم
 async function loadAnalyticsDashboard() {
     // أ) جلب إجمالي الطلاب وحساب المراحل
-    const { data: students, error: studentErr } = await supabaseClient.from('students').select('academic_year');
+    const { data: students, error: studentErr } = await supabaseClient.from('students').select('academic_year').eq('teacher_id', currentTeacherId);
     
     if (!studentErr && students) {
         document.getElementById('statTotalStudents').textContent = `${students.length} طالب`;
         
+        let primaryCount = 0;
         let prepCount = 0;
         let secCount = 0;
         
         students.forEach(st => {
+            if (st.academic_year.includes('ابتدائي')) primaryCount++;
             if (st.academic_year.includes('الاعدادي')) prepCount++;
             if (st.academic_year.includes('الثانوي')) secCount++;
         });
         
+        document.getElementById('statPrimaryStudents').textContent = `${primaryCount} طالب`;
         document.getElementById('statPrepStudents').textContent = `${prepCount} طالب`;
         document.getElementById('statSecStudents').textContent = `${secCount} طالب`;
     }
@@ -754,6 +775,7 @@ async function loadAnalyticsDashboard() {
     const { data: lastAttendance, error: attErr } = await supabaseClient
         .from('attendance')
         .select('status')
+        .eq('teacher_id', currentTeacherId)
         .order('session_date', { ascending: false })
         .limit(100);
 
@@ -776,8 +798,8 @@ if (btnExportStudentsExcel) {
         try {
             // [أ] جلب كافة البيانات المطلوبة بالتوازي من السيرفر لسرعة الأداء
             const [studentsRes, paymentsRes] = await Promise.all([
-                supabaseClient.from('students').select('*').order('academic_year', { ascending: true }),
-                supabaseClient.from('payments').select('*, students(student_name, academic_year)')
+                supabaseClient.from('students').select('*').eq('teacher_id', currentTeacherId).order('academic_year', { ascending: true }),
+                supabaseClient.from('payments').select('*, students(student_name, academic_year)').eq('teacher_id', currentTeacherId)
             ]);
 
             if (studentsRes.error) throw studentsRes.error;
@@ -928,7 +950,7 @@ btnFetchPayStudents.addEventListener('click', async () => {
     const { data: students, error: studentError } = await supabaseClient
         .from('students')
         .select('student_id, student_name, login_code')
-        .eq('academic_year', selectedYear);
+        .eq('academic_year', selectedYear).eq('teacher_id', currentTeacherId);
 
     if (studentError || !students || students.length === 0) {
         paymentRosterTableBody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-red-500 font-medium">⚠️ لا يوجد طلاب مسجلين في هذا الصف حالياً.</td></tr>`;

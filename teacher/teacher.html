@@ -19,9 +19,6 @@
       }
       @media (max-width: 1024px) {
         .sidebar {
-          display: none;
-        }
-        .mobile-nav {
           display: flex;
         }
       }
@@ -39,8 +36,7 @@
   <body class="bg-slate-50 min-h-screen font-sans flex">
     <aside
     id="mainSidebar"
-      class="sidebar w-72 bg-indigo-900 h-screen sticky top-0 flex-col p-6 text-white hidden lg:flex shadow-2xl"
-    >
+    class="sidebar fixed lg:sticky top-0 right-0 w-72 bg-indigo-900 h-screen flex-col p-6 text-white shadow-2xl z-50 transform translate-x-full lg:translate-x-0 transition-transform duration-300"    >
       <div class="mb-10">
         <h1
           class="text-2xl font-bold border-b border-indigo-700 pb-4 flex items-center gap-3"
@@ -51,10 +47,10 @@
       </div>
 
       <nav class="flex-1 space-y-2">
-        <a href="../Side/student-profile.html" target="_blank" class="bg-indigo-600 text-white p-3 rounded-xl block text-center font-bold">
+        <a href="../Side/student-profile.html" class="bg-indigo-600 text-white p-3 rounded-xl block text-center font-bold">
     📑 فتح ملف الطالب الشامل
 </a>
-        <a target="_blank"
+        <a 
           href="../Side/class_reports.html"
           class="flex items-center gap-3 p-3 rounded-xl hover:bg-indigo-800 transition-all group"
         >
@@ -136,7 +132,8 @@
     <span>مرحباً يا مستر، <span id="teacherNameDisplay">...</span></span>
 </div>
 
-        <!-- زر فتح القائمة الجانبية في الفون (اضفنا له id="openSidebarBtn") -->
+        <!-- زر فتح القائمة الجانبية في الفون -->
+        <div id="sidebarOverlay" class="fixed inset-0 bg-black/50 z-40 hidden lg:hidden"></div>
         <button
           id="openSidebarBtn"
           class="lg:hidden p-2 text-indigo-900 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
@@ -162,8 +159,12 @@
                     <p id="statTotalStudents" class="text-2xl font-black text-slate-800">0 طالب</p>
                 </div>
                 <div class="bg-white p-5 rounded-2xl border border-slate-100 space-y-1">
+                    <p class="text-xs font-medium text-slate-400">طلاب المرحلة الابتدائية</p>
+                    <p id="statPrimaryStudents" class="text-2xl font-black text-indigo-600">0 طالب</p>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-slate-100 space-y-1">
                     <p class="text-xs font-medium text-slate-400">طلاب المرحلة الإعدادية</p>
-                    <p id="statPrepStudents" class="text-2xl font-black text-indigo-600">0 طالب</p>
+                    <p id="statPrepStudents" class="text-2xl font-black text-blue-800">0 طالب</p>
                 </div>
                 <div class="bg-white p-5 rounded-2xl border border-slate-100 space-y-1">
                     <p class="text-xs font-medium text-slate-400">طلاب المرحلة الثانوية</p>
@@ -227,9 +228,9 @@
             >
             <select
               id="newAcademicYear"
+              required
               class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
             >
-            <option value="" hidden>-- أختر الصف --</option>
             <option value="رابع ابتدائي">رابع ابتدائي</option>
                 <option value="خامس ابتدائي">خامس ابتدائي</option>
                 <option value="سادس ابتدائي">سادس ابتدائي</option>
@@ -384,6 +385,9 @@
                         <label class="block text-xs font-medium text-slate-600 mb-1">اختر الصف الدراسي</label>
                         <select id="examAcademicYear" required class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-emerald-500 outline-none bg-white">
                             <option value="">-- اختر الصف --</option>
+                            <option value="رابع ابتدائي">رابع ابتدائي</option>
+                            <option value="خامس ابتدائي">خامس ابتدائي</option>
+                            <option value="سادس ابتدائي">سادس ابتدائي</option>
                             <option value="الصف الأول الاعدادي">الصف الأول الاعدادي</option>
                             <option value="الصف الثاني الاعدادي">الصف الثاني الاعدادي</option>
                             <option value="الصف الثالث الاعدادي">الصف الثالث الاعدادي</option>

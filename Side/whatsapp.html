@@ -18,7 +18,7 @@
                     إدارة روابط مجموعات الواتساب للصفوف
                 </h1>
                 <p class="text-xs text-slate-500 mt-1 leading-relaxed">
-                    أدخل رابط مجموعة الواتساب الخاص بكل صف دراسي، وسيتم تحديثه تلقائياً في لوحة تحكم الطالب (Dashboard).
+                    أدخل رابط مجموعة الواتساب الخاص بكل صف دراسي، وسيتم تحديثه تلقائياً في لوحة تحكم الطالب.
                 </p>
             </div>
             <a href="../teacher/teacher.html" class="bg-slate-100 hover:bg-slate-200 text-slate-600 px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap">
@@ -57,7 +57,7 @@
 
             const { data, error } = await supabaseClient
                 .from('whatsapp_groups')
-                .select('*');
+                .select('*').eq('teacher_id', currentTeacherId);
 
             if (error) {
                 whatsappInputsContainer.innerHTML = `

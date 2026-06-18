@@ -116,6 +116,7 @@
     </div>
 
     <script>
+        const currentTeacherId = localStorage.getItem('teacher_id'); // جلب ID المدرس
         // إعداد الاتصال بـ Supabase
         const SUPABASE_URL = "https://mtwwslednzzseoihsbrb.supabase.co";
         const SUPABASE_ANON_KEY = "sb_publishable_7kYHCVI_a9jNIOiKTEd-sQ_S9VMkWYg";
@@ -161,7 +162,7 @@
                         payment_date
                     )
                 `)
-                .eq('academic_year', selectedYear);
+                .eq('academic_year', selectedYear).eq('teacher_id', currentTeacherId);
 
             if (studentError) {
                 console.error(studentError);

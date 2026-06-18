@@ -28,6 +28,8 @@ const pAttendanceTableBody = document.getElementById('pAttendanceTableBody');
 const pGradesTableBody = document.getElementById('pGradesTableBody');
 const pPaymentsTableBody = document.getElementById('pPaymentsTableBody');
 
+const currentTeacherId = localStorage.getItem('teacher_id'); // جلب ID المدرس
+
 // متغير لحفظ بيانات الطالب النشط حالياً لتسهيل حذفه
 let currentActiveStudent = null;
 
@@ -39,7 +41,7 @@ btnSearchProfile.addEventListener('click', async () => {
     btnSearchProfile.disabled = true;
 
     // 1. استعلام البحث المرن
-    let query = supabaseClient.from("students").select("*");
+    let query = supabaseClient.from("students").select("*").eq('teacher_id', currentTeacherId);
     if (!isNaN(searchVal) && searchVal !== "") { query = query.eq("student_id", Number(searchVal)); }
     else if (searchVal.toUpperCase().startsWith("STD-")) { query = query.eq("login_code", searchVal.toUpperCase()); }
     else { query = query.ilike("student_name", `%${searchVal}%`); }
@@ -64,7 +66,7 @@ btnSearchProfile.addEventListener('click', async () => {
     pParentPhone.textContent = student.parent_phone || "غير مسجل";
 
     // 2. جلب سجل الحضور
-    const { data: attData } = await supabaseClient.from('attendance').select('*').eq('student_id', student.student_id).order('session_date', { ascending: false });
+    const { data: attData } = await supabaseClient.from('attendance').select('*').eq('student_id', student.student_id).eq('teacher_id', currentTeacherId).order('session_date', { ascending: false });
     let present = 0, absent = 0;
     pAttendanceTableBody.innerHTML = '';
     if (attData && attData.length > 0) {
@@ -84,7 +86,7 @@ btnSearchProfile.addEventListener('click', async () => {
     statRatio.textContent = `${(present + absent) > 0 ? Math.round((present / (present + absent)) * 100) : 0}%`;
 
     // 3. جلب سجل الدرجات
-    const { data: gradesData } = await supabaseClient.from('exam_grades').select('student_score, teacher_notes, exams ( exam_name, max_score )').eq('student_id', student.student_id);
+    const { data: gradesData } = await supabaseClient.from('exam_grades').select('student_score, teacher_notes, exams ( exam_name, max_score )').eq('student_id', student.student_id).eq('teacher_id', currentTeacherId);
     let earned = 0, max = 0;
     pGradesTableBody.innerHTML = '';
     if (gradesData && gradesData.length > 0) {
@@ -104,7 +106,7 @@ btnSearchProfile.addEventListener('click', async () => {
     statGrades.textContent = `${earned} / ${max}`;
 
     // 4. جلب سجل المدفوعات المالية
-    const { data: payData, error: payError } = await supabaseClient.from('payments').select('*').eq('student_id', student.student_id).order('payment_date', { ascending: false });
+    const { data: payData, error: payError } = await supabaseClient.from('payments').select('*').eq('student_id', student.student_id).eq('teacher_id', currentTeacherId).order('payment_date', { ascending: false });
     pPaymentsTableBody.innerHTML = '';
     if (!payError && payData && payData.length > 0) {
         statPaymentStatus.textContent = payData[0].payment_status;
