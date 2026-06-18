@@ -268,7 +268,7 @@ if (examAcademicYear) {
           <td class="p-3 font-mono text-slate-400">${student.student_id}</td>
           <td class="p-3 font-bold text-slate-800">${student.student_name}</td>
           <td class="p-3">
-            <input type="number" step="0.1" required min="0" placeholder="0" class="student-score-input w-24 px-3 py-1.5 rounded-xl border border-slate-200 text-center font-bold outline-none focus:ring-2 focus:ring-emerald-500">
+            <input type="number" step="0.1" min="0" placeholder="0" class="student-score-input w-24 px-3 py-1.5 rounded-xl border border-slate-200 text-center font-bold outline-none focus:ring-2 focus:ring-emerald-500">
           </td>
           <td class="p-3">
             <input type="text" placeholder="ملاحظة للطالب" class="student-notes-input w-full px-3 py-1.5 rounded-xl border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-emerald-500">
@@ -770,22 +770,6 @@ async function loadAnalyticsDashboard() {
         document.getElementById('statPrepStudents').textContent = `${prepCount} طالب`;
         document.getElementById('statSecStudents').textContent = `${secCount} طالب`;
     }
-
-    // ب) جلب نسبة حضور آخر حصة مسجلة في السيستم لبث روح الطمأنينة للمدرس
-    const { data: lastAttendance, error: attErr } = await supabaseClient
-        .from('attendance')
-        .select('status')
-        .eq('teacher_id', currentTeacherId)
-        .order('session_date', { ascending: false })
-        .limit(100);
-
-    if (!attErr && lastAttendance && lastAttendance.length > 0) {
-        let present = lastAttendance.filter(a => a.status === 'حاضر').length;
-        let ratio = Math.round((present / lastAttendance.length) * 100);
-        document.getElementById('statLastAttendanceRatio').textContent = `${ratio}%`;
-    } else {
-        document.getElementById('statLastAttendanceRatio').textContent = `0%`;
-    }
 }
 
 // 2. كود تصدير التقرير المالي والإداري الخارق الشامل لكل البيانات والمبالغ والأرباح
@@ -963,7 +947,7 @@ btnFetchPayStudents.addEventListener('click', async () => {
     const { data: payments } = await supabaseClient
         .from('payments')
         .select('*')
-        .eq('month_name', selectedMonth);
+        .eq('month_name', selectedMonth).eq('teacher_id', currentTeacherId);
 
     // تحويل المصفوفة لـ Map لسهولة الفحص السريع بالـ Student ID
     const payMap = new Map();
@@ -1052,3 +1036,4 @@ async function togglePaymentStatus(studentId, monthName, amount, currentStatus) 
     }
     btn.disabled = false;
 }
+statLastAttendanceRatio
